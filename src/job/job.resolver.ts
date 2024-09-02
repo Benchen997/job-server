@@ -1,6 +1,15 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  Int,
+  Subscription,
+} from '@nestjs/graphql';
 import { JobService } from './job.service';
 import { Job } from '../entities/job.entity';
+import { JobStatus } from '../entities/JobStatus';
+import { pubSub } from './pubsub';
 
 @Resolver(() => Job)
 export class JobResolver {
@@ -11,18 +20,30 @@ export class JobResolver {
     return this.jobService.findAllJobs();
   }
 
-  @Query(() => Job, { name: 'job', nullable: true })
-  async findJobById(@Args('id', { type: () => Int }) id: number) {
-    return this.jobService.findJobById(id);
-  }
-
-  @Query(() => [Job], { name: 'pendingJobs' })
-  async findAllPendingJobs() {
-    return this.jobService.findAllPendingJobs();
-  }
-
   @Mutation(() => Job)
   async createJob(@Args('name') name: string) {
     return this.jobService.createJob(name);
+  }
+
+  @Mutation(() => Job)
+  async updateJobStatus(
+    @Args('id', { type: () => Int }) id: number,
+    @Args('status', { type: () => String }) status: JobStatus,
+  ) {
+    return this.jobService.updateJobStatus(id, status);
+  }
+
+  @Subscription(() => Job, {
+    resolve: (value) => value,
+  })
+  jobAdded() {
+    return pubSub.asyncIterator('jobAdded');
+  }
+
+  @Subscription(() => Job, {
+    resolve: (value) => value,
+  })
+  jobUpdated() {
+    return pubSub.asyncIterator('jobUpdated');
   }
 }

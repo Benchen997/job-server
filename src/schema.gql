@@ -24,10 +24,14 @@ scalar DateTime
 
 type Query {
   jobs: [Job!]!
-  job(id: Int!): Job
-  pendingJobs: [Job!]!
 }
 
 type Mutation {
   createJob(name: String!): Job!
+  updateJobStatus(id: Int!, status: String!): Job!
+}
+
+type Subscription {
+  jobAdded: Job!
+  jobUpdated: Job!
 }
