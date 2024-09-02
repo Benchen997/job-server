@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { JobModule } from './job/job.module';
 import ormConfig from './config/orm.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -15,5 +17,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     TypeOrmModule.forRoot(ormConfig()),
     JobModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
