@@ -20,7 +20,7 @@ export class Job {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ default: JobStatus.PENDING })
   status: JobStatus;
 
   @CreateDateColumn()
