@@ -24,7 +24,7 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This backend provide service on job entity for basic CRUD, it is using webscoket for real time data update to the frontend interface for better user experience.
 
 ## Installation
 
