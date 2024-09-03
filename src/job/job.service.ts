@@ -1,50 +1,50 @@
-import { Injectable } from '@nestjs/common';
-import { Job } from '../entities/job.entity';
-import { JobStatus } from '../entities/JobStatus';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { pubSub } from './pubsub';
-
+import { Job, JobStatus } from '../entities/job.entity';
+import { JobGateway } from './job.gateway';
 @Injectable()
 export class JobService {
   constructor(
     @InjectRepository(Job)
     private readonly jobRepository: Repository<Job>,
+    private readonly jobGateway: JobGateway,
   ) {}
-  async findAllJobs(): Promise<Job[]> {
-    return this.jobRepository.find();
+  /**
+   * This method returns all the jobs from the database.
+   * @returns the list of all jobs.
+   */
+  async findAll(): Promise<Job[]> {
+    return await this.jobRepository.find();
   }
-  async findJobById(id: number): Promise<Job> {
-    return this.jobRepository.findOne({ where: { id } });
-  }
-  async findAllPendingJobs(): Promise<Job[]> {
-    return this.jobRepository.find({
-      where: {
-        status: JobStatus.PENDING,
-      },
-    });
-  }
-  async createJob(name: string): Promise<Job> {
+
+  /**
+   * This method creates a new job in the database.
+   * @param name the name of the job.
+   * @returns the newly created job.
+   */
+  async create(name: string): Promise<Job> {
     const job = new Job();
     job.name = name;
-    job.status = JobStatus.PENDING;
     const savedJob = await this.jobRepository.save(job);
-    // Publish the new job creation event
-    await pubSub.publish('jobAdded', { jobAdded: savedJob });
-
+    this.jobGateway.emitJobAdded(savedJob);
     return savedJob;
   }
 
-  async updateJobStatus(id: number, status: JobStatus): Promise<Job> {
+  /**
+   * This method updates the status of a job in the database.
+   * @param id the id of the job.
+   * @param status the new status of the job.
+   * @returns the updated job.
+   */
+  async updateStatus(id: number, status: JobStatus): Promise<Job> {
     const job = await this.jobRepository.findOne({ where: { id } });
-    if (job) {
-      job.status = status;
-      const updatedJob = await this.jobRepository.save(job);
-      // Publish the job status update event
-      await pubSub.publish('jobUpdated', { jobUpdated: updatedJob });
-
-      return updatedJob;
+    if (!job) {
+      throw new BadRequestException('Job with given Id is not found');
     }
-    return null;
+    job.status = status;
+    const savedJob = await this.jobRepository.save(job);
+    this.jobGateway.emitJobUpdated(savedJob);
+    return savedJob;
   }
 }

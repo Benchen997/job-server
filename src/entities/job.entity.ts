@@ -4,25 +4,25 @@ import {
   PrimaryGeneratedColumn,
   CreateDateColumn,
 } from 'typeorm';
-import { ObjectType, Field, Int } from '@nestjs/graphql';
-import { JobStatus } from './JobStatus';
+
+export enum JobStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
 
 @Entity()
-@ObjectType() // <-- Add this decorator
 export class Job {
   @PrimaryGeneratedColumn()
-  @Field(() => Int)
   id: number;
 
   @Column()
-  @Field()
   name: string;
 
-  @Column()
-  @Field(() => JobStatus)
+  @Column({ default: JobStatus.PENDING })
   status: JobStatus;
 
   @CreateDateColumn()
-  @Field()
   createdAt: Date;
 }
