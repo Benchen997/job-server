@@ -1,12 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Job, JobStatus } from '../entities/job.entity';
+import { JobGateway } from './job.gateway';
 @Injectable()
 export class JobService {
   constructor(
     @InjectRepository(Job)
     private readonly jobRepository: Repository<Job>,
+    private readonly jobGateway: JobGateway,
   ) {}
   /**
    * This method returns all the jobs from the database.
@@ -24,7 +26,9 @@ export class JobService {
   async create(name: string): Promise<Job> {
     const job = new Job();
     job.name = name;
-    return await this.jobRepository.save(job);
+    const savedJob = await this.jobRepository.save(job);
+    this.jobGateway.emitJobAdded(savedJob);
+    return savedJob;
   }
 
   /**
@@ -35,7 +39,12 @@ export class JobService {
    */
   async updateStatus(id: number, status: JobStatus): Promise<Job> {
     const job = await this.jobRepository.findOne({ where: { id } });
+    if (!job) {
+      throw new BadRequestException('Job with given Id is not found');
+    }
     job.status = status;
-    return await this.jobRepository.save(job);
+    const savedJob = await this.jobRepository.save(job);
+    this.jobGateway.emitJobUpdated(savedJob);
+    return savedJob;
   }
 }
